@@ -1,0 +1,42 @@
+name: Deploy College100 PWA
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'college100-site-part1.zip'
+      - 'college100-site-part2.zip'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Unpack College100
+        run: |
+          mkdir -p site
+          unzip -q college100-site-part1.zip -d site
+          unzip -q college100-site-part2.zip -d site
+          test -f site/index.html
+          test -f site/sw.js
+          test -f site/manifest.webmanifest
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
